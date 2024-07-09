@@ -4,8 +4,9 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+const bodyParser = require('body-parser');
 
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const generateRandomString = function() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -15,6 +16,12 @@ const generateRandomString = function() {
   }
   return result;
 };
+
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  res.cookie("username", username);
+  res.redirect("/urls");
+});
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
