@@ -112,9 +112,7 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
-const generateRandomString2 = () => {
-  return Math.random().toString(36).substring(2, 8);
-};
+
 
 const getUserByEmail = (email, users) => {
   for (const userId in users) {
@@ -138,7 +136,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Email already registered.");
   }
 
-  const userId = generateRandomString2();
+  const userId = generateRandomString();
   users[userId] = {
     id: userId,
     email,
@@ -158,6 +156,14 @@ app.get("/register", (req, res) => {
     user
   };
   res.render("register", templateVars);
+});
+
+
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["user_id"]]
+  };
+  res.render("login", templateVars);
 });
 
 
