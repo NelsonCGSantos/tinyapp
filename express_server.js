@@ -112,22 +112,33 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/register", (req, res) => {
-  const userId = generateRandomString2();
-  const { email, password } = req.body;
+const generateRandomString2 = () => {
+  return Math.random().toString(36).substring(2, 8);
+};
 
-  // Check if email or password is empty
+const getUserByEmail = (email, users) => {
+  for (const userId in users) {
+    if (users[userId].email === email) {
+      return users[userId];
+    }
+  }
+  return null;
+};
+
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+  
+  
   if (!email || !password) {
     return res.status(400).send("Email and password cannot be empty.");
   }
 
-  // Check if email already exists
-  for (const user in users) {
-    if (users[user].email === email) {
-      return res.status(400).send("Email already registered.");
-    }
+  
+  if (getUserByEmail(email, users)) {
+    return res.status(400).send("Email already registered.");
   }
 
+  const userId = generateRandomString2();
   users[userId] = {
     id: userId,
     email,
@@ -135,7 +146,7 @@ app.post("/register", (req, res) => {
   };
 
   res.cookie("user_id", userId);
-
+  
   res.redirect("/urls");
 });
 
@@ -161,8 +172,4 @@ const users = {
     email: "zoro@persona.com",
     password: "3swords",
   },
-};
-
-const generateRandomString2 = () => {
-  return Math.random().toString(36).substring(2, 8);
 };
