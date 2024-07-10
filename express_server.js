@@ -51,26 +51,32 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const templateVars = {
-    username: req.cookies["username"],
+    user,
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const templateVars = {
-    username: req.cookies["username"]
+    user
   };
   res.render("urls_new", templateVars);
 });
 
 
 app.get("/urls/:id", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
+    user
   };
   res.render("urls_show", templateVars);
 });
@@ -102,13 +108,61 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
+app.post("/register", (req, res) => {
+  const userId = generateRandomString2();
+  const { email, password } = req.body;
+
+  // Check if email or password is empty
+  if (!email || !password) {
+    return res.status(400).send("Email and password cannot be empty.");
+  }
+
+  // Check if email already exists
+  for (const user in users) {
+    if (users[user].email === email) {
+      return res.status(400).send("Email already registered.");
+    }
+  }
+
+  users[userId] = {
+    id: userId,
+    email,
+    password
+  };
+
+  res.cookie("user_id", userId);
+
+  res.redirect("/urls");
+});
+
+
 app.get("/register", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const templateVars = {
-    username: req.cookies["username"]
+    user
   };
   res.render("register", templateVars);
 });
+
+
+const users = {
+  userRandomID: {
+    id: "Lupin",
+    email: "lupin@persona.com",
+    password: "joker",
+  },
+  user2RandomID: {
+    id: "Roronoa",
+    email: "zoro@persona.com",
+    password: "3swords",
+  },
+};
+
+const generateRandomString2 = () => {
+  return Math.random().toString(36).substring(2, 8);
+};
