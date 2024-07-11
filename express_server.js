@@ -29,11 +29,27 @@ const getUserByEmail = (email, users) => {
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 const users = {};
+
+const urlsForUser = (id) => {
+  const userUrls = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+};
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
@@ -69,14 +85,12 @@ app.post("/register", (req, res) => {
     password
   };
 
-  if (!req.cookies["user_id"]) {
-    res.cookie("user_id", userId);
-  }
+  res.cookie("user_id", userId);
   res.redirect("/urls");
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/login");
 });
 
 app.listen(PORT, () => {
@@ -93,8 +107,12 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.status(403).send("Please log in or register to view URLs.");
+  }
+  const userUrls = urlsForUser(userId);
   const user = users[userId];
-  const templateVars = { user, urls: urlDatabase };
+  const templateVars = { user, urls: userUrls };
   res.render("urls_index", templateVars);
 });
 
@@ -110,8 +128,18 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.status(403).send("Please log in to view this URL.");
+  }
+  const url = urlDatabase[req.params.id];
+  if (!url) {
+    return res.status(404).send("Short URL not found.");
+  }
+  if (url.userID !== userId) {
+    return res.status(403).send("You do not own this URL.");
+  }
   const user = users[userId];
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user };
+  const templateVars = { id: req.params.id, longURL: url.longURL, user };
   res.render("urls_show", templateVars);
 });
 
@@ -121,28 +149,50 @@ app.post("/urls", (req, res) => {
     return res.status(403).send("You must be logged in to create new URLs.");
   }
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: userId,
+  };
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  if (!longURL) {
+  const url = urlDatabase[req.params.id];
+  if (!url) {
     return res.status(404).send("Short URL not found.");
   }
-  res.redirect(longURL);
+  res.redirect(url.longURL);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
+  const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.status(403).send("You must be logged in to delete URLs.");
+  }
+  const url = urlDatabase[req.params.id];
+  if (!url) {
+    return res.status(404).send("Short URL not found.");
+  }
+  if (url.userID !== userId) {
+    return res.status(403).send("You do not own this URL.");
+  }
+  delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  const newLongURL = req.body.longURL;
-  urlDatabase[id] = newLongURL;
+  const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.status(403).send("You must be logged in to edit URLs.");
+  }
+  const url = urlDatabase[req.params.id];
+  if (!url) {
+    return res.status(404).send("Short URL not found.");
+  }
+  if (url.userID !== userId) {
+    return res.status(403).send("You do not own this URL.");
+  }
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
