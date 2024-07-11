@@ -69,7 +69,9 @@ app.post("/register", (req, res) => {
     password
   };
 
-  res.cookie("user_id", userId);
+  if (!req.cookies["user_id"]) {
+    res.cookie("user_id", userId);
+  }
   res.redirect("/urls");
 });
 
