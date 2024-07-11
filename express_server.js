@@ -100,6 +100,9 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.redirect("/login");
+  }
   const user = users[userId];
   const templateVars = { user };
   res.render("urls_new", templateVars);
@@ -113,6 +116,10 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.status(403).send("You must be logged in to create new URLs.");
+  }
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -120,6 +127,9 @@ app.post("/urls", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
+  if (!longURL) {
+    return res.status(404).send("Short URL not found.");
+  }
   res.redirect(longURL);
 });
 
@@ -143,6 +153,9 @@ app.post("/logout", (req, res) => {
 
 app.get("/register", (req, res) => {
   const userId = req.cookies["user_id"];
+  if (userId) {
+    return res.redirect("/urls");
+  }
   const user = users[userId];
   const templateVars = { user };
   res.render("register", templateVars);
@@ -150,6 +163,9 @@ app.get("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   const userId = req.cookies["user_id"];
+  if (userId) {
+    return res.redirect("/urls");
+  }
   const user = users[userId];
   const templateVars = { user };
   res.render("login", templateVars);
