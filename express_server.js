@@ -6,6 +6,7 @@ app.set("view engine", "ejs");
 
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -59,7 +60,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Email cannot be found.");
   }
 
-  if (user.password !== password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send("Incorrect password.");
   }
 
@@ -79,10 +80,12 @@ app.post("/register", (req, res) => {
   }
 
   const userId = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
   users[userId] = {
     id: userId,
     email,
-    password
+    password: hashedPassword
   };
 
   res.cookie("user_id", userId);
