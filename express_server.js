@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
-const { getUserByEmail } = require('./helpers');
+const { getUserByEmail, urlsForUser } = require('./helpers');
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -41,15 +41,6 @@ const urlDatabase = {
 
 const users = {};
 
-const urlsForUser = (id) => {
-  const userUrls = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userUrls;
-};
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
@@ -112,11 +103,12 @@ app.get("/urls", (req, res) => {
   if (!userId) {
     return res.status(403).send("Please log in or register to view URLs.");
   }
-  const userUrls = urlsForUser(userId);
+  const userUrls = urlsForUser(userId, urlDatabase);
   const user = users[userId];
   const templateVars = { user, urls: userUrls };
   res.render("urls_index", templateVars);
 });
+
 
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
